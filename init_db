@@ -1,0 +1,9 @@
+#!/bin/sh
+psql template1 -c 'CREATE DATABASE me_log;'
+psql me_log -c '
+CREATE TABLE run_log (
+  command TEXT NOT NULL,
+  args TEXT NOT NULL,
+  did_time INTEGER,
+  PRIMARY KEY (command, args)
+);'
