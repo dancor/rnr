@@ -19,9 +19,13 @@ recordRun :: String -> String -> IO ()
 recordRun command argsStr = do
   time <- getTimeInt
   conn <- cPS
-  withTransaction conn $ \ conn -> run conn
-    "INSERT INTO run_log (command, args, did_time) VALUES (?, ?, ?)"
-    [toSql command, toSql argsStr, toSql time]
+  withTransaction conn $ \ c -> do
+    numRowsChanged <- run c
+      "UPDATE run_log SET did_time = ? WHERE command = ? AND args = ?"
+      [toSql time, toSql command, toSql argsStr]
+    when (numRowsChanged == 0) $ run c
+      "INSERT INTO run_log (command, args, did_time) VALUES (?, ?, ?)"
+      [toSql command, toSql argsStr, toSql time] >> return ()
   disconnect conn
 
 lastRun :: String -> IO (Maybe Int)
