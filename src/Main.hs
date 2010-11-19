@@ -15,26 +15,29 @@ cPS = handleSqlError $ connectPostgreSQL "dbname=me_log"
 getTimeInt :: IO Int
 getTimeInt = fmap floor getPOSIXTime
 
-recordRun :: String -> String -> IO ()
-recordRun command argsStr = do
+escArgs = unwords . map escArg
+
+recordRun :: String -> [String] -> IO ()
+recordRun command args = do
   time <- getTimeInt
   conn <- cPS
+  let argsSql = toSql $ escArgs args
   withTransaction conn $ \ c -> do
     numRowsChanged <- run c
       "UPDATE run_log SET did_time = ? WHERE command = ? AND args = ?"
-      [toSql time, toSql command, toSql argsStr]
+      [toSql time, toSql command, argsSql]
     when (numRowsChanged == 0) $ run c
       "INSERT INTO run_log (command, args, did_time) VALUES (?, ?, ?)"
-      [toSql command, toSql argsStr, toSql time] >> return ()
+      [toSql command, argsSql, toSql time] >> return ()
   disconnect conn
 
-lastRun :: String -> IO (Maybe Int)
-lastRun command = do
+lastRun :: String -> [String] -> IO (Maybe Int)
+lastRun command args = do
   conn <- cPS
   ret <- withTransaction conn $ \ conn -> quickQuery conn
-    "SELECT did_time FROM run_log WHERE command = ? ORDER BY did_time DESC \
-    \LIMIT 1"
-    [toSql command]
+    "SELECT did_time FROM run_log WHERE command = ? AND args = ? \
+    \ORDER BY did_time DESC LIMIT 1"
+    [toSql command, toSql $ escArgs args]
   return . listToMaybe $ map (fromSql . head) ret
 
 escArg :: [Char] -> [Char]
@@ -59,11 +62,11 @@ main :: IO ()
 main = do
   timeStr:command:args <- getArgs
   timeNow <- getTimeInt
-  timeLastRunMb <- lastRun command
+  timeLastRunMb <- lastRun command args
   let
     run = do
       HSH.runIO (command, args)
-      recordRun command . intercalate " " $ map escArg args
+      recordRun command args
   case timeLastRunMb of
     Nothing -> run
     Just timeLastRun ->
