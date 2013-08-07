@@ -5,7 +5,7 @@ license-file:   LICENSE
 author:         dan corson <danl@alum.mit.edu>
 synopsis:       <syn>
 build-type:     Simple
-build-depends:  HDBC, HDBC-postgresql, HSH, base >= 4, haskell98, time
+build-depends:  base, HDBC, HDBC-postgresql, HSH, time
 
 executable:     rnr
 main-is:        Main.hs
