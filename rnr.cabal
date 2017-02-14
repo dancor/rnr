@@ -5,7 +5,14 @@ license-file:   LICENSE
 author:         dan corson <danl@alum.mit.edu>
 synopsis:       <syn>
 build-type:     Simple
-build-depends:  base, HDBC, HDBC-postgresql, HSH, time
+build-depends:
+    base
+  , directory
+  , filepath
+  , HDBC
+  , HDBC-sqlite3
+  , HSH
+  , time
 
 executable:     rnr
 main-is:        Main.hs
