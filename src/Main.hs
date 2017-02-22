@@ -16,7 +16,8 @@ getConnection = do
     home <- getHomeDirectory
     let sqlFile = home </> ".config" </> "rnr"
     dbExisted <- doesFileExist sqlFile
-    conn <- handleSqlError $ connectSqlite3 (home </> ".config" </> "rnr")
+    createDirectoryIfMising True (home </> ".config")
+    conn <- handleSqlError $ connectSqlite3 sqlFile
     unless dbExisted . withTransaction conn $ \c -> run c (
         "CREATE TABLE run_log (" ++
         "command TEXT NOT NULL, " ++
